@@ -19,7 +19,7 @@ public class MyServer {
 
 
         //创建两个线程组
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        EventLoopGroup bossGroup = new NioEventLoopGroup(2);
         EventLoopGroup workerGroup = new NioEventLoopGroup(); //8个NioEventLoop
         try {
 
