@@ -227,5 +227,107 @@
     }
 ```
 
+# 接收连接请求过程
 
+## unsafe.read
+
+```java
+//检查是否当前线程
+//执行doReadMessages(readBuf),该变量为list容器，该方式是读取boss线程中NioSeverSocketChannel接收到请求，new 一个nio封装的NioSocketChannel添加到容器内
+//循环遍历readBuf容器，传递每个NioSocketChannel链式执行serverSocket中pipeline中channelread实现方法
+@Override
+        public void read() {
+            assert eventLoop().inEventLoop();
+            final ChannelConfig config = config();
+            final ChannelPipeline pipeline = pipeline();
+            final RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();
+            allocHandle.reset(config);
+
+            boolean closed = false;
+            Throwable exception = null;
+            try {
+                try {
+                    do {
+                        int localRead = doReadMessages(readBuf);
+                        if (localRead == 0) {
+                            break;
+                        }
+                        if (localRead < 0) {
+                            closed = true;
+                            break;
+                        }
+
+                        allocHandle.incMessagesRead(localRead);
+                    } while (allocHandle.continueReading());
+                } catch (Throwable t) {
+                    exception = t;
+                }
+
+                int size = readBuf.size();
+                for (int i = 0; i < size; i ++) {
+                    readPending = false;
+                    pipeline.fireChannelRead(readBuf.get(i));
+                }
+                readBuf.clear();
+                allocHandle.readComplete();
+                pipeline.fireChannelReadComplete();
+
+                if (exception != null) {
+                    closed = closeOnReadError(exception);
+
+                    pipeline.fireExceptionCaught(exception);
+                }
+
+                if (closed) {
+                    inputShutdown = true;
+                    if (isOpen()) {
+                        close(voidPromise());
+                    }
+                }
+            } finally {
+                // Check if there is a readPending which was not processed yet.
+                // This could be for two reasons:
+                // * The user called Channel.read() or ChannelHandlerContext.read() in channelRead(...) method
+                // * The user called Channel.read() or ChannelHandlerContext.read() in channelReadComplete(...) method
+                //
+                // See https://github.com/netty/netty/issues/2254
+                if (!readPending && !config.isAutoRead()) {
+                    removeReadOp();
+                }
+            }
+        }
+    }
+```
+
+## ServerBootstrapAcceptor
+
+将NioSocketChannel注册到worker线程
+
+```java
+//msg为NioSocketChannel强转
+//管道添加处理器
+//设置channel属性
+//用worker线程注册socketChannel
+public void channelRead(ChannelHandlerContext ctx, Object msg) {
+            final Channel child = (Channel) msg;
+
+            child.pipeline().addLast(childHandler);
+
+            setChannelOptions(child, childOptions, logger);
+            setAttributes(child, childAttrs);
+
+            try {
+                childGroup.register(child).addListener(new ChannelFutureListener() {
+                    @Override
+                    public void operationComplete(ChannelFuture future) throws Exception {
+                        if (!future.isSuccess()) {
+                            forceClose(child, future.cause());
+                        }
+                    }
+                });
+            } catch (Throwable t) {
+                forceClose(child, t);
+            }
+        }
+```
 
