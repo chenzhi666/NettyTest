@@ -147,10 +147,13 @@
 
 类AbstractChannel
 
-1）在类AbstractNioChannel上的doRegister() 完成对jdk channel的注册到selector上获得selectionKey后终止循环
+1）在类AbstractNioChannel上的doRegister() 完成对jdk channel的注册到selector上，并注册0，即没有注册任何事件，注册accept事件会在
+
+2） pipeline.fireChannelRegistered()方法内链式执行完fireChannelActive()后，才会Channel主动发起一个outbound的读事件，实际调用了Unsafe的beginRead方法，最后到了AbstractNioChannel来设置SelectionKey的interestOps属性，来最终把Channel绑定到Selector
 
 ```java
-   private void register0(ChannelPromise promise) {
+  
+private void register0(ChannelPromise promise) {
             try {
                 if (!promise.setUncancellable() || !ensureOpen(promise)) {
                     return;
@@ -228,6 +231,14 @@
 ```
 
 # 接收连接请求过程
+
+总体流程：在boss线程上的select监听请求事件->执行processSelectKeys->接收连接--》创建一个新的NioSocketChannel--》注册到work EventLoop上----》在该线程执行JDK 的selector Read注册事件
+
+1）服务器轮询Accept事件，获取事件后调用unsafe.read方法，该方法为ServerSocket内部类，该方法由2部分组成
+
+2）doReadMessage用于创建NioSocketChannel对象
+
+3）随后执行pipeline.fireChannelRead方法，并将自己注册到一个新的workerGroup中的一个EventLoop，并且注册一个0，表示注册成功，但没有注册读（1）事件
 
 ## unsafe.read
 
