@@ -33,9 +33,9 @@ public class ServerTest {
             //3.设置服务器非阻塞
             ssc.configureBlocking(false);
             //4.绑定tcp地址
-            ssc.bind(new InetSocketAddress(port));
+
             // 把管道放到传送带上，并在传送带上注册一个感兴趣事件，此处传送带感兴趣事件为连接事件
-            ssc.register(selector, SelectionKey.OP_ACCEPT);
+            ssc.register(selector, SelectionKey.OP_ACCEPT); ssc.bind(new InetSocketAddress(port));
             System.out.println("开启服务器成功，当前端口：" + port);
         } catch (IOException e) {
             e.printStackTrace();
