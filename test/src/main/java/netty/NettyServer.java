@@ -8,12 +8,14 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 
 public class NettyServer {
     public static void main(String[] args) throws InterruptedException {
         System.out.println(Thread.currentThread().getName());
         //创建BOSSGroup和workergroup
-        EventLoopGroup bossGroup=new NioEventLoopGroup(1);
+        EventLoopGroup bossGroup=new NioEventLoopGroup(2);
         EventLoopGroup workergroup=new NioEventLoopGroup();
 
         //创建服务器端配置对象，配置参数
@@ -23,6 +25,7 @@ public class NettyServer {
                     .channel(NioServerSocketChannel.class)  //设置服务器通道
                     .option(ChannelOption.SO_BACKLOG,128) //设置线程队列得到连接数
                     .option(ChannelOption.SO_KEEPALIVE,true)  //设置保持活动连接状态
+                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ChannelInitializer<SocketChannel>() {//创建一个通道测试对象
                         //给pipelline 设置处理器
                         protected void initChannel(SocketChannel socketChannel) throws Exception {

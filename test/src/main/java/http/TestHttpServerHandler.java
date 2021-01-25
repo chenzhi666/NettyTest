@@ -10,9 +10,12 @@ import io.netty.util.CharsetUtil;
 public class TestHttpServerHandler extends SimpleChannelInboundHandler<HttpObject> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, HttpObject httpObject) throws Exception {
+        System.out.println("客户端地址："+ctx.channel().remoteAddress());
+        System.out.println("boss:"+ctx.channel().parent().eventLoop());
+        System.out.println("children:"+ctx.channel().eventLoop());
         if (httpObject instanceof HttpRequest){
             System.out.println("httpobject 类型："+httpObject.getClass());
-            System.out.println("客户端地址："+ctx.channel().remoteAddress());
+
             //响应信息
             ByteBuf content= Unpooled.copiedBuffer("hello,我是服务器", CharsetUtil.UTF_8);
             //构造httprespone
