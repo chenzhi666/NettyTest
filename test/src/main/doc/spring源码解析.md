@@ -397,13 +397,23 @@ createBean中
  * 				创建internalAutoProxyCreator的BeanPostProcessor【AnnotationAwareAspectJAutoProxyCreator】
  * 				1）、创建Bean的实例
  * 				2）、populateBean；给bean的各种属性赋值
-                      1）遍历bean实例化后置处理器
+                      1）遍历bean实例化后置处理器【InstantiationAwareBeanPostProcessor】
                       2）调用AutowiredAnnotationBeanPostProcessor后置处理器的                                 postProcessProperties方法实现属性注入
  * 				3）、initializeBean：初始化bean；
  * 						1）、invokeAwareMethods()：处理Aware接口的方法回调
+                             1）BeanNameAware，BeanClassLoaderAware，BeanFactoryAware
  * 						2）、applyBeanPostProcessorsBeforeInitialization()：应用后置处理器的postProcessBeforeInitialization（）
+                            1）ApplicationContextAwareProcessor回调实现了指定XXAware的set方法
+                            2）CommonAnnotationBeanPostProcessor执行注解@PostConstruct的方法
+                            相当于即init方法
+                            
+                            
  * 						3）、invokeInitMethods()；执行自定义的初始化方法
+                             1）调用实现了InitializingBean接口的afterPropertiesSet方法
+                             2）若没有则执行工厂指定的自定义初始话方法
  * 						4）、applyBeanPostProcessorsAfterInitialization()；执行后置处理器的postProcessAfterInitialization（）；
+                             1）ApplicationListenerDetector把实现了ApplicationListener接口的
+                             监听器加入到上下文
  * 				4）、BeanPostProcessor(AnnotationAwareAspectJAutoProxyCreator)创建成功；--》aspectJAdvisorsBuilder
  * 			7）、把BeanPostProcessor注册到BeanFactory中；
  * 				beanFactory.addBeanPostProcessor(postProcessor);
