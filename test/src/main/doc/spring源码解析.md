@@ -397,6 +397,8 @@ createBean中
  * 				创建internalAutoProxyCreator的BeanPostProcessor【AnnotationAwareAspectJAutoProxyCreator】
  * 				1）、创建Bean的实例
  * 				2）、populateBean；给bean的各种属性赋值
+                      1）遍历bean实例化后置处理器
+                      2）调用AutowiredAnnotationBeanPostProcessor后置处理器的                                 postProcessProperties方法实现属性注入
  * 				3）、initializeBean：初始化bean；
  * 						1）、invokeAwareMethods()：处理Aware接口的方法回调
  * 						2）、applyBeanPostProcessorsBeforeInitialization()：应用后置处理器的postProcessBeforeInitialization（）
